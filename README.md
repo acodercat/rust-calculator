@@ -1,19 +1,41 @@
-# Rust Calculator
 
-This calculator project is a versatile expression evaluator that supports parsing and evaluating simple mathematical expressions, postfix expressions, and equations with a single variable.
+# Scientific Calculator
+
+## Overview
+
+This project is a scientific calculator designed to handle both simple arithmetic and complex mathematical functions, including logarithms, trigonometric operations, and solving linear equations. It supports calculations in both infix and postfix (Reverse Polish Notation, RPN) notations and is capable of understanding constants like Pi and Euler's number (e).
 
 ## Features
 
-- **Expression Parsing**: Parses both infix (standard notation) and postfix (Reverse Polish Notation) mathematical expressions.
-- **Equation Solving**: Solves simple linear equations with one variable.
-- **Error Handling**: Comprehensive error handling for various scenarios like division by zero, parse errors, unexpected tokens, etc.
-- **AST Generation**: Generates an Abstract Syntax Tree (AST) for more accurate evaluation of complex expressions.
-- **Tokenization**: Lexical analysis to convert input strings into meaningful tokens for parsing.
+- **Infix and Postfix Notation:** Perform calculations using both standard and RPN formats.
+- **Mathematical Functions:** Supports addition, subtraction, multiplication, division, logarithms (log, ln), and trigonometric functions (sin, cos, tan, ctan).
+- **Constants Recognition:** Automatically recognizes and calculates expressions involving Pi and e.
+- **Equation Solving:** Can solve simple linear equations with one variable.
+- **Error Handling:** Gracefully handles errors, providing meaningful feedback to the user.
 
-## Components
+## Compile and Run
 
-- **Lexer (`lex`)**: Converts a string input into a sequence of tokens representing numbers, operators, parentheses, and variables.
-- **Parser (`parse_expression`)**: Parses tokens to generate an AST based on the precedence and associativity of operators.
-- **Evaluator (`evaluate_infix`, `evaluate_postfix`)**: Evaluates expressions represented as AST or in postfix notation.
-- **Error Handling (`CalculatorError`)**: Enumerates possible errors that might occur during lexing, parsing, and evaluating expressions.
+  ```bash
+   cargo run
+   ```
 
+## Running Tests
+
+```bash
+cargo test
+```
+
+## Examples
+
+Here are a few examples of how to use the calculator:
+
+* `(3+(4-1))*5` ➜ `30`
+* `2 * x + 0.5 = 1` ➜ `x=0.25`
+* `log(10)` ➜ `1`
+* `log10` ➜ `1`
+* `sin(pi)` ➜ `0`
+* `sinpi` ➜ `0`
+* `pi` ➜ `3.14159265`
+* `2pi` ➜ `6.28318531`
+* `e` ➜ `2.71828183`
+* `log100(10)` ➜ `0.5`
