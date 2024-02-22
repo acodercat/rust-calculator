@@ -1,19 +1,26 @@
 use crate::calculator::lexer::lex;
-use crate::calculator::{evaluator::{evaluate_infix, evaluate_postfix}, parser::parse_expression};
+use crate::calculator::{evaluator::{evaluate_infix, evaluate_postfix}};
 use crate::calculator::token::Token;
 use crate::calculator::evaluator::solve_equation;
+use crate::calculator::parser::parse;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CalculatorError {
     DivisionByZero,
     ParseError,
     UnexpectedToken,
     InvalidExpression,
-    MissingRightParenthesis,
     MultipleVariables,
+    EmptyExpression,
+    ExtraTokensDetected,
+    UnmatchedRightParenthesis,
+    UnmatchedLeftParenthesis,
 }
 pub fn process_expression(input: &str) -> Result<String, CalculatorError> {
     let tokens = lex(input);
+    if tokens.is_empty() {
+        return Err(CalculatorError::EmptyExpression);
+    }
     let contains_equal = tokens.iter().any(|t| *t == Token::Equal);
     let mut seen_variable = None;
 
@@ -37,16 +44,19 @@ pub fn process_expression(input: &str) -> Result<String, CalculatorError> {
         _ => {
             if is_postfix_expression(&tokens) {
                 let result = evaluate_postfix(&tokens)?;
-                Ok(result.to_string())
+                Ok(round_result(result).to_string())
             } else {
-                let (ast, _) = parse_expression(&tokens)?;
+                let (ast, _) = parse(&tokens)?;
                 let result = evaluate_infix(&ast)?;
-                Ok(result.to_string())
+                Ok(round_result(result).to_string())
             }
         }
     }
 }
 
+fn round_result(result: f64) -> f64 {
+    (result * 100000000.0).round() / 100000000.0
+}
 
 fn is_postfix_expression(tokens: &[Token]) -> bool {
 
@@ -77,4 +87,63 @@ fn is_postfix_expression(tokens: &[Token]) -> bool {
     }
 
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn evaluate_simple_expression() {
+        let input = "(3+(4-1))*5";
+        let result = process_expression(input);
+        assert_eq!(result, Ok("30".to_string()));
+    }
+
+    #[test]
+    fn solve_linear_equation() {
+        let input = "2 * x + 0.5 = 1";
+        let result = process_expression(input);
+        assert_eq!(result, Ok("x=0.25".to_string()));
+    }
+
+    #[test]
+    fn solve_equation_with_variables_on_both_sides() {
+        let input = "2 * x + 1 = 2 * (1 - x)";
+        let result = process_expression(input);
+        assert_eq!(result, Ok("x=0.25".to_string()));
+    }
+
+    #[test]
+    fn test_log_base_10_of_10() {
+        let input = "log(10)";
+        assert_eq!(process_expression(input), Ok("1".to_string()));
+
+        let input = "log10";
+        assert_eq!(process_expression(input), Ok("1".to_string()));
+    }
+
+    #[test]
+    fn test_log_base_100_of_10() {
+        let input = "log100(10)";
+        assert_eq!(process_expression(input), Ok("0.5".to_string()));
+    }
+
+    #[test]
+    fn test_sin_of_pi() {
+        let input = "sin(pi)";
+        assert_eq!(process_expression(input), Ok("0".to_string()));
+
+        let input = "sinpi";
+        assert_eq!(process_expression(input), Ok("0".to_string()));
+    }
+
+    #[test]
+    fn test_sin_of_1_5_pi() {
+        let input = "sin(1.5pi)";
+        assert_eq!(process_expression(input), Ok("-1".to_string()));
+
+        let input = "sin(1.5*pi)";
+        assert_eq!(process_expression(input), Ok("-1".to_string()));
+    }
+
 }

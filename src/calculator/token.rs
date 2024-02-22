@@ -9,4 +9,14 @@ pub(crate) enum Token {
     RightParenthesis,
     Variable(String),
     Equal,
+    Log,
+    Ln,
+    Sin,
+    Cos,
+    Tan,
+    Ctan,
+    Pi,
+    E,
+    LogBase(f64),
 }
+

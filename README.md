@@ -1,7 +1,6 @@
 # Rust Calculator
 
 This calculator project is a versatile expression evaluator that supports parsing and evaluating simple mathematical expressions, postfix expressions, and equations with a single variable.
-The project is structured to handle different types of expressions with clarity and extendability in mind.
 
 ## Features
 

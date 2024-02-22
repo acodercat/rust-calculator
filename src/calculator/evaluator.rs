@@ -1,7 +1,7 @@
-use crate::calculator::ast::{AST, Operator};
+use crate::calculator::ast::{AST, Operator, Function};
 use crate::calculator::calculator::CalculatorError;
 use crate::calculator::token::Token;
-use crate::calculator::parser::parse_expression;
+use crate::calculator::parser::parse;
 
 fn extract_coefficients_and_constants(ast: &AST) -> Result<(f64, f64), CalculatorError> {
     match ast {
@@ -34,6 +34,7 @@ fn extract_coefficients_and_constants(ast: &AST) -> Result<(f64, f64), Calculato
                 },
             }
         },
+        _ => return Err(CalculatorError::UnexpectedToken),
     }
 }
 
@@ -44,8 +45,8 @@ pub(crate) fn solve_equation(tokens: &[Token]) -> Result<f64, CalculatorError> {
     let (left_tokens, right_tokens) = tokens.split_at(equal_pos);
     let right_tokens = &right_tokens[1..];
 
-    let (left_ast, _) = parse_expression(left_tokens)?;
-    let (right_ast, _) = parse_expression(right_tokens)?;
+    let (left_ast, _) = parse(left_tokens)?;
+    let (right_ast, _) = parse(right_tokens)?;
 
     let (left_coefficient, left_constant) = extract_coefficients_and_constants(&left_ast)?;
     let (right_coefficient, right_constant) = extract_coefficients_and_constants(&right_ast)?;
@@ -80,6 +81,23 @@ pub(crate) fn evaluate_infix(ast: &AST) -> Result<f64, CalculatorError> {
                     }
                 },
             }
+        },
+        AST::Func(func, arg) => {
+            let arg_val = evaluate_infix(arg)?;
+            match func {
+                Function::Log => Ok(arg_val.log10()),
+                Function::Ln => Ok(arg_val.ln()),
+                Function::Sin => Ok(arg_val.sin()),
+                Function::Cos => Ok(arg_val.cos()),
+                Function::Tan => Ok(arg_val.tan()),
+                Function::Ctan => Ok(1.0 / arg_val.tan()),
+            }
+        },
+        AST::Const(c) => Ok(*c),
+        AST::LogBase(base, expr) => {
+            let base_val = *base;
+            let expr_val = evaluate_infix(expr)?;
+            Ok(expr_val.log(base_val))
         },
     }
 }
@@ -119,4 +137,32 @@ pub(crate) fn evaluate_postfix(tokens: &[Token]) -> Result<f64, CalculatorError>
     }
 
     stack.pop().ok_or(CalculatorError::InvalidExpression)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::calculator::parser::parse;
+
+    #[test]
+    fn test_solve_simple_equation() {
+        let tokens = vec![Token::Variable("x".to_string()), Token::Plus, Token::Number(40.0), Token::Equal, Token::Number(42.0)];
+        let result = solve_equation(&tokens);
+        assert_eq!(result, Ok(2.0));
+    }
+
+    #[test]
+    fn test_evaluate_infix_simple() {
+        let tokens = vec![Token::Number(2.0), Token::Plus, Token::Number(2.0)];
+        let (ast, _) = parse(&tokens).unwrap();
+        let result = evaluate_infix(&ast);
+        assert_eq!(result, Ok(4.0));
+    }
+
+    #[test]
+    fn test_evaluate_postfix_simple() {
+        let tokens = vec![Token::Number(2.0), Token::Number(2.0), Token::Plus];
+        let result = evaluate_postfix(&tokens);
+        assert_eq!(result, Ok(4.0));
+    }
 }
