@@ -52,7 +52,7 @@ pub enum CalculatorError {
 pub(crate) fn process_expression(input: &str) -> Result<String, CalculatorError> {
 
     // Analyze the input string to convert it into a sequence of tokens
-    let tokens = lex(input);
+    let tokens = lex(input)?;
 
     // Return an error if the input string does not contain any valid tokens
     if tokens.is_empty() {

@@ -1,3 +1,4 @@
+use crate::calculator::calculator::CalculatorError;
 use crate::calculator::token::Token;
 
 /// Lexically analyzes a mathematical expression and converts it into a sequence of tokens.
@@ -33,7 +34,7 @@ use crate::calculator::token::Token;
 /// The lexer ensures that each character contributes to forming a valid token, skipping over
 /// unrecognized characters, and appropriately groups characters into tokens based on the context
 /// (e.g., differentiating between the minus sign and negative numbers).
-pub(crate) fn lex(input: &str) -> Vec<Token> {
+pub(crate) fn lex(input: &str) -> Result<Vec<Token>, CalculatorError> {
     let mut tokens = Vec::new();
     let mut chars = input.chars().peekable();
 
@@ -56,9 +57,9 @@ pub(crate) fn lex(input: &str) -> Vec<Token> {
                 // Parse and add tokens for constants, functions, or variables
                 let name = parse_identifier(&mut chars);
                 if ["pi", "e"].contains(&name.as_str()) {
-                    handle_constant(&name, &mut tokens);
+                    handle_constant(&name, &mut tokens)?;
                 } else if name.ends_with("pi") || name.ends_with("e") {
-                    handle_function_with_constant(&name, &mut tokens);
+                    handle_function_with_constant(&name, &mut tokens)?;
                 } else {
                     handle_function(&name, &mut chars, &mut tokens);
                 }
@@ -67,7 +68,7 @@ pub(crate) fn lex(input: &str) -> Vec<Token> {
         }
     }
 
-    tokens
+    Ok(tokens)
 }
 
 /// Parses a sequence of characters into a floating-point number.
@@ -226,11 +227,17 @@ fn parse_identifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> String 
 /// handle_constant("unknown", &mut tokens);
 /// assert!(tokens.is_empty()); // No token is added for unrecognized identifiers
 /// ```
-fn handle_constant(name: &str, tokens: &mut Vec<Token>) {
+fn handle_constant(name: &str, tokens: &mut Vec<Token>) -> Result<(), CalculatorError> {
     match name {
-        "pi" => tokens.push(Token::Pi),
-        "e" => tokens.push(Token::E),
-        _ => {} // Handle error or ignore
+        "pi" => {
+            tokens.push(Token::Pi);
+            Ok(())
+        },
+        "e" => {
+            tokens.push(Token::E);
+            Ok(())
+        },
+        _ => Err(CalculatorError::UnexpectedToken),
     }
 }
 
@@ -307,7 +314,7 @@ fn handle_function(name: &str, chars: &mut std::iter::Peekable<std::str::Chars>,
 /// // No tokens are added for unrecognized function names
 /// assert!(tokens.is_empty());
 /// ```
-fn handle_function_with_constant(name: &str, tokens: &mut Vec<Token>) {
+fn handle_function_with_constant(name: &str, tokens: &mut Vec<Token>) -> Result<(), CalculatorError> {
     let (func, const_part) = name.split_at(name.len() - 2);
 
     match func {
@@ -315,18 +322,16 @@ fn handle_function_with_constant(name: &str, tokens: &mut Vec<Token>) {
         "cos" => tokens.push(Token::Cos),
         "tan" => tokens.push(Token::Tan),
         "ctan" => tokens.push(Token::Ctan),
-        _ => {}
+        _ => return Err(CalculatorError::UnexpectedToken),
     }
 
     tokens.push(Token::LeftParenthesis);
 
-    match const_part {
-        "pi" => tokens.push(Token::Pi),
-        "e" => tokens.push(Token::E),
-        _ => {}
-    }
+    handle_constant(const_part, tokens)?;
 
     tokens.push(Token::RightParenthesis);
+
+    Ok(())
 }
 
 /// Handles cases where a number is immediately followed by a constant ('pi' or 'e'), adding necessary tokens.
@@ -394,13 +399,13 @@ mod tests {
 
     #[test]
     fn test_lex_basic_arithmetic() {
-        let tokens = lex("3 + 4.5");
+        let tokens = lex("3 + 4.5").expect("Failed to lex basic arithmetic");
         assert_eq!(tokens, vec![Token::Number(3.0), Token::Plus, Token::Number(4.5)]);
     }
 
     #[test]
     fn test_lex_constants_and_functions() {
-        let tokens = lex("sin(pi) + ln(e)");
+        let tokens = lex("sin(pi) + ln(e)").expect("Failed to lex constants and functions");
         assert_eq!(tokens, vec![Token::Sin, Token::LeftParenthesis, Token::Pi, Token::RightParenthesis, Token::Plus, Token::Ln, Token::LeftParenthesis, Token::E, Token::RightParenthesis]);
     }
 
@@ -433,7 +438,7 @@ mod tests {
     #[test]
     fn test_handle_constant_pi() {
         let mut tokens = Vec::new();
-        handle_constant("pi", &mut tokens);
+        handle_constant("pi", &mut tokens).expect("Failed to handle constant");
         assert_eq!(tokens, vec![Token::Pi]);
     }
 
@@ -448,7 +453,7 @@ mod tests {
     #[test]
     fn test_handle_function_with_constant_sinpi() {
         let mut tokens = Vec::new();
-        handle_function_with_constant("sinpi", &mut tokens);
+        handle_function_with_constant("sinpi", &mut tokens).expect("Failed to handle function with constant");
         assert_eq!(tokens, vec![Token::Sin, Token::LeftParenthesis, Token::Pi, Token::RightParenthesis]);
     }
 

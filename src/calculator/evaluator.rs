@@ -441,7 +441,7 @@ mod tests {
         ];
 
         for (input, expected_coefficient, expected_constant) in test_cases {
-            let tokens = lex(input);
+            let tokens = lex(input).expect("Failed to lex input");
             let (ast, _) = parse(&tokens).unwrap();
             let result = extract_coefficients_and_constants(&ast);
 
