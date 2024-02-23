@@ -15,9 +15,9 @@ This project is a scientific calculator designed to handle both simple arithmeti
 
 ## Compile and Run
 
-  ```bash
-   cargo run
-   ```
+```bash
+cargo run
+```
 
 ## Running Tests
 
@@ -35,6 +35,8 @@ Here are a few examples of how to use the calculator:
 * `log10` ➜ `1`
 * `sin(pi)` ➜ `0`
 * `sinpi` ➜ `0`
+* `sin(1.5pi)` ➜ `-1`
+* `sin(1.5*pi)` ➜ `-1`
 * `pi` ➜ `3.14159265`
 * `2pi` ➜ `6.28318531`
 * `e` ➜ `2.71828183`

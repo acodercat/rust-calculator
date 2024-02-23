@@ -135,20 +135,45 @@ mod tests {
     use crate::calculator::token::Token;
 
     #[test]
-    fn test_parse_simple_expression() {
-        let tokens = vec![
-            Token::Number(3.0),
-            Token::Plus,
-            Token::Number(2.0),
-        ];
-        let expected_ast = AST::BinOp(
-            Box::new(AST::Num(3.0)),
-            Operator::Add,
-            Box::new(AST::Num(2.0)),
-        );
-        assert_eq!(parse(&tokens), Ok((expected_ast, &[] as &[Token])));
+    fn parse_single_number() {
+        let tokens = vec![Token::Number(42.0)];
+        let (ast, _) = parse(&tokens).unwrap();
+        assert_eq!(ast, AST::Num(42.0));
+    }
+
+    #[test]
+    fn parse_simple_addition() {
+        let tokens = vec![Token::Number(1.0), Token::Plus, Token::Number(2.0)];
+        let (ast, _) = parse(&tokens).unwrap();
+        match ast {
+            AST::BinOp(lhs, op, rhs) => {
+                assert_eq!(*lhs, AST::Num(1.0));
+                assert_eq!(op, Operator::Add);
+                assert_eq!(*rhs, AST::Num(2.0));
+            },
+            _ => panic!("Expected BinOp AST node"),
+        }
+    }
+
+    #[test]
+    fn parse_error_unmatched_left_parenthesis() {
+        let tokens = vec![Token::LeftParenthesis, Token::Number(1.0)];
+        assert!(parse(&tokens).is_err());
+    }
+
+    #[test]
+    fn parse_error_unmatched_right_parenthesis() {
+        let tokens = vec![Token::Number(1.0), Token::RightParenthesis];
+        assert!(parse(&tokens).is_err());
+    }
+
+    #[test]
+    fn parse_error_unexpected_token() {
+        let tokens = vec![Token::Plus];
+        assert!(parse(&tokens).is_err());
     }
 
 }
+
 
 

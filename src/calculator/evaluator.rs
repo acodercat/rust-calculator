@@ -141,6 +141,7 @@ pub(crate) fn evaluate_postfix(tokens: &[Token]) -> Result<f64, CalculatorError>
 
 #[cfg(test)]
 mod tests {
+    use crate::calculator::lexer::lex;
     use super::*;
     use crate::calculator::parser::parse;
 
@@ -164,5 +165,58 @@ mod tests {
         let tokens = vec![Token::Number(2.0), Token::Number(2.0), Token::Plus];
         let result = evaluate_postfix(&tokens);
         assert_eq!(result, Ok(4.0));
+    }
+
+    #[test]
+    fn test_extract_coefficients_and_constants() {
+        let test_cases = vec![
+            ("x", 1.0, 0.0),
+            ("-x", -1.0, 0.0),
+            ("2*x", 2.0, 0.0),
+            ("2*x + 3", 2.0, 3.0),
+            ("-3*x - 5", -3.0, -5.0),
+            ("3 + 2*x", 2.0, 3.0),
+            ("4 - x", -1.0, 4.0),
+            ("5 - 2*x", -2.0, 5.0),
+            ("2*(x + 3)", 2.0, 6.0),
+            ("3*(2 - x)", -3.0, 6.0),
+            ("4 + 2*(x - 1)", 2.0, 2.0),
+            ("5 - 3*(1 - x)", 3.0, 2.0),
+            ("(x + 2) + (3 - x)", 0.0, 5.0),
+            ("2*(x + 1) - 3*(x - 1)", -1.0, 5.0),
+            ("(3*x + 4) - (x - 2)", 2.0, 6.0),
+            ("7", 0.0, 7.0),
+            ("-4", 0.0, -4.0),
+            ("-5*x", -5.0, 0.0),
+            ("x + 10", 1.0, 10.0),
+            ("3*x - 2", 3.0, -2.0),
+            ("4 + (x - 1)", 1.0, 3.0),
+            ("(2 - x) + 5", -1.0, 7.0),
+            ("-(2*x - 3)", -2.0, 3.0),
+            ("2*(x + 3) - 4*x", -2.0, 6.0),
+            ("0.5*x - 1.5", 0.5, -1.5),
+            ("x - 8", 1.0, -8.0),
+            ("9 + x", 1.0, 9.0),
+            ("-x - 7", -1.0, -7.0),
+            ("x + x + x", 3.0, 0.0),
+            ("5 - 2 + x", 1.0, 3.0),
+            ("(x + 4) + (3 - x)", 0.0, 7.0),
+            ("1/2*x + 3", 0.5, 3.0),
+            ("-3*x + 5 - 2*x", -5.0, 5.0),
+            ("2*(x + 1) + 3*x", 5.0, 2.0),
+            ("2*(3 + x) - (x - 1) + 4", 1.0, 11.0),
+        ];
+
+        for (input, expected_coefficient, expected_constant) in test_cases {
+            let tokens = lex(input);
+            let (ast, _) = parse(&tokens).unwrap();
+            let result = extract_coefficients_and_constants(&ast);
+
+            assert!(result.is_ok(), "Failed to extract coefficients and constants for input: {}", input);
+            let (coefficient, constant) = result.unwrap();
+
+            assert_eq!(coefficient, expected_coefficient, "Coefficient mismatch for input: {}", input);
+            assert_eq!(constant, expected_constant, "Constant mismatch for input: {}", input);
+        }
     }
 }

@@ -38,8 +38,8 @@ pub fn process_expression(input: &str) -> Result<String, CalculatorError> {
 
     match seen_variable {
         Some(variable_name) if contains_equal => {
-            let solution = solve_equation(&tokens)?;
-            Ok(format!("{}={}", variable_name, solution))
+            let result = solve_equation(&tokens)?;
+            Ok(format!("{}={}", variable_name, round_result(result)))
         },
         _ => {
             if is_postfix_expression(&tokens) {
@@ -92,6 +92,51 @@ fn is_postfix_expression(tokens: &[Token]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_basic_operations() {
+        assert_eq!(process_expression("1 + 1"), Ok("2".to_string()));
+        assert_eq!(process_expression("2 - 1"), Ok("1".to_string()));
+        assert_eq!(process_expression("2 * 3"), Ok("6".to_string()));
+        assert_eq!(process_expression("8 / 4"), Ok("2".to_string()));
+    }
+
+    #[test]
+    fn test_complex_expressions() {
+        assert_eq!(process_expression("2 * (3 + 4)"), Ok("14".to_string()));
+        assert_eq!(process_expression("(2 + 3) * (4 - 1)"), Ok("15".to_string()));
+    }
+
+    #[test]
+    fn test_trigonometric_functions() {
+        assert_eq!(process_expression("cos(0)"), Ok("1".to_string()));
+        assert_eq!(process_expression("tan(pi/4)"), Ok("1".to_string()));
+    }
+
+    #[test]
+    fn test_logarithmic_functions() {
+        assert_eq!(process_expression("ln(e)"), Ok("1".to_string()));
+        assert_eq!(process_expression("log(100)"), Ok("2".to_string()));
+    }
+
+    #[test]
+    fn test_error_handling() {
+        assert!(process_expression("2 / 0").is_err());
+        assert!(process_expression("2 * (3 + 4").is_err());
+        assert!(process_expression("sin(90").is_err());
+    }
+
+    #[test]
+    fn test_constants_and_variables() {
+        assert_eq!(process_expression("pi"), Ok("3.14159265".to_string()));
+        assert_eq!(process_expression("e"), Ok("2.71828183".to_string()));
+        assert_eq!(process_expression("2 * x + 1 = 3"), Ok("x=1".to_string()));
+    }
+
+
+
+
+
     #[test]
     fn evaluate_simple_expression() {
         let input = "(3+(4-1))*5";
@@ -145,5 +190,12 @@ mod tests {
         let input = "sin(1.5*pi)";
         assert_eq!(process_expression(input), Ok("-1".to_string()));
     }
+
+    #[test]
+    fn test_postfix_expression() {
+        assert_eq!(process_expression("3 4 + 2 *"), Ok("14".to_string()));
+        assert_eq!(process_expression("10 2 8 * + 3 -"), Ok("23".to_string()));
+    }
+
 
 }
