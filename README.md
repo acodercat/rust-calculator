@@ -25,6 +25,16 @@ cargo run
 cargo test
 ```
 
+## Generating Documentation
+To generate and view the documentation for this project, use the following Cargo commands:
+```bash
+# Generate documentation
+cargo doc
+
+# Generate documentation and open it in your browser
+cargo doc --open
+```
+
 ## Examples
 
 Here are a few examples of how to use the calculator:
@@ -34,6 +44,7 @@ Here are a few examples of how to use the calculator:
 * `log(10)` ➜ `1`
 * `log10` ➜ `1`
 * `sin(pi)` ➜ `0`
+* `sin(pi) + ln(e)` ➜ `1`
 * `sinpi` ➜ `0`
 * `sin(1.5pi)` ➜ `-1`
 * `sin(1.5*pi)` ➜ `-1`
