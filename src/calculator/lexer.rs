@@ -20,14 +20,14 @@ use crate::calculator::token::Token;
 /// Basic arithmetic operations:
 ///
 /// ```
-/// let tokens = lex("3 + 4.5");
+/// let tokens = lex("3 + 4.5").unwrap("Failed to lex basic arithmetic");
 /// assert_eq!(tokens, vec![Token::Number(3.0), Token::Plus, Token::Number(4.5)]);
 /// ```
 ///
 /// Handling constants and functions:
 ///
 /// ```
-/// let tokens = lex("sin(pi) + ln(e)");
+/// let tokens = lex("sin(pi) + ln(e)").unwrap("Failed to lex basic arithmetic");
 /// assert_eq!(tokens, vec![Token::Sin, Token::LeftParenthesis, Token::Pi, Token::RightParenthesis, Token::Plus, Token::Ln, Token::LeftParenthesis, Token::E, Token::RightParenthesis]);
 /// ```
 ///
