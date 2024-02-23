@@ -41,6 +41,8 @@ Here are a few examples of how to use the calculator:
 
 * `(3+(4-1))*5` ➜ `30`
 * `2 * x + 0.5 = 1` ➜ `x=0.25`
+* `2 9 +` ➜ `11`
+* `2 9 + 2 *` ➜ `22`
 * `log(10)` ➜ `1`
 * `log10` ➜ `1`
 * `sin(pi)` ➜ `0`
