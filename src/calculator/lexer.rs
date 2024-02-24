@@ -1,39 +1,43 @@
 use crate::calculator::calculator::CalculatorError;
 use crate::calculator::token::Token;
 
-/// Lexically analyzes a mathematical expression and converts it into a sequence of tokens.
+/// Performs lexical analysis on a mathematical expression, converting it into a sequence of tokens.
 ///
-/// This function iterates through the input string character by character, grouping them into
-/// meaningful tokens such as numbers, operators, parentheses, and identifiers for variables or functions.
+/// This function sequentially processes each character of the input string, categorizing them into tokens
+/// representing numbers, arithmetic operators, parentheses, and identifiers for variables, functions, or constants.
 ///
 /// # Arguments
 ///
-/// * `input` - The mathematical expression as a string slice.
+/// * `input` - A string slice containing the mathematical expression to be tokenized.
 ///
 /// # Returns
 ///
-/// A vector of `Token` representing the parsed elements of the input expression. This can include
-/// numeric literals, arithmetic operators, parentheses, and identifiers for functions or variables.
+/// * `Ok(Vec<Token>)` - A vector containing the tokens derived from the input expression, representing the
+///   structured components such as numeric values, operators, and parentheses.
+/// * `Err(CalculatorError)` - An error if the lexing process encounters an unrecognized pattern or invalid syntax.
 ///
 /// # Examples
 ///
-/// Basic arithmetic operations:
+/// Tokenizing basic arithmetic operations:
 ///
 /// ```
-/// let tokens = lex("3 + 4.5").unwrap("Failed to lex basic arithmetic");
+/// let tokens = lex("3 + 4.5").expect("Failed to lex expression");
 /// assert_eq!(tokens, vec![Token::Number(3.0), Token::Plus, Token::Number(4.5)]);
 /// ```
 ///
-/// Handling constants and functions:
+/// Tokenizing expressions involving constants and functions:
 ///
 /// ```
-/// let tokens = lex("sin(pi) + ln(e)").unwrap("Failed to lex basic arithmetic");
-/// assert_eq!(tokens, vec![Token::Sin, Token::LeftParenthesis, Token::Pi, Token::RightParenthesis, Token::Plus, Token::Ln, Token::LeftParenthesis, Token::E, Token::RightParenthesis]);
+/// let tokens = lex("sin(pi) + ln(e)").expect("Failed to lex expression");
+/// assert_eq!(tokens, vec![
+///     Token::Sin, Token::LeftParenthesis, Token::Pi, Token::RightParenthesis,
+///     Token::Plus,
+///     Token::Ln, Token::LeftParenthesis, Token::E, Token::RightParenthesis
+/// ]);
 /// ```
 ///
-/// The lexer ensures that each character contributes to forming a valid token, skipping over
-/// unrecognized characters, and appropriately groups characters into tokens based on the context
-/// (e.g., differentiating between the minus sign and negative numbers).
+/// The lexer is designed to accurately parse and tokenize each character, skipping over any unrecognized characters,
+/// and properly assembling tokens to reflect the intended mathematical operations and expressions within the given context.
 pub(crate) fn lex(input: &str) -> Result<Vec<Token>, CalculatorError> {
     let mut tokens = Vec::new();
     let mut chars = input.chars().peekable();
@@ -64,7 +68,9 @@ pub(crate) fn lex(input: &str) -> Result<Vec<Token>, CalculatorError> {
                     handle_function(&name, &mut chars, &mut tokens);
                 }
             },
-            _ => { chars.next(); },
+            _ => {
+                return Err(CalculatorError::UnexpectedToken);
+            }
         }
     }
 
@@ -199,33 +205,38 @@ fn parse_identifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> String 
     name
 }
 
-/// Adds tokens for recognized mathematical constants to the tokens vector.
+/// Processes mathematical constant identifiers, adding corresponding tokens to a vector.
 ///
-/// This function checks the identifier name for known constants ('pi' and 'e') and adds
-/// the corresponding token to the tokens vector. Unrecognized names are ignored, assuming
-/// the calling context handles them appropriately.
+/// This function examines the given identifier name to determine if it matches recognized
+/// mathematical constants ('pi' or 'e'). If a match is found, the appropriate token is added
+/// to the provided tokens vector.
 ///
 /// # Arguments
 ///
-/// * `name` - The identifier name as a string slice, potentially representing a mathematical constant.
-/// * `tokens` - A mutable reference to the vector of tokens where the constant token will be pushed if recognized.
+/// * `name` - A string slice representing the identifier to be checked for constant values.
+/// * `tokens` - A mutable reference to a vector of tokens where the recognized constant token will be appended.
+///
+/// # Returns
+///
+/// * `Ok(())` if a recognized constant is processed successfully.
+/// * `Err(CalculatorError::UnexpectedToken)` if the identifier does not match any recognized constants.
 ///
 /// # Examples
 ///
-/// Handling a recognized constant 'pi':
+/// Adding a token for the recognized 'pi' constant:
 ///
 /// ```
 /// let mut tokens = Vec::new();
-/// handle_constant("pi", &mut tokens);
-/// assert_eq!(tokens, vec![Token::Pi]);
+/// assert!(handle_constant("pi", &mut tokens).is_ok());
+/// assert_eq!(tokens, vec![Token::Pi]); // 'pi' token successfully added
 /// ```
 ///
-/// Ignoring an unrecognized identifier:
+/// Attempting to process an unrecognized identifier:
 ///
 /// ```
 /// let mut tokens = Vec::new();
-/// handle_constant("unknown", &mut tokens);
-/// assert!(tokens.is_empty()); // No token is added for unrecognized identifiers
+/// assert!(handle_constant("unknown", &mut tokens).is_err()); // 'unknown' is not a recognized constant
+/// assert!(tokens.is_empty()); // No tokens added for unrecognized identifiers
 /// ```
 fn handle_constant(name: &str, tokens: &mut Vec<Token>) -> Result<(), CalculatorError> {
     match name {
@@ -284,35 +295,38 @@ fn handle_function(name: &str, chars: &mut std::iter::Peekable<std::str::Chars>,
     }
 }
 
-/// Handles functions combined with constants (e.g., sinpi) by splitting the input into function and constant parts.
+/// Parses and tokenizes expressions that combine functions with constants, such as "sinpi".
 ///
-/// This function identifies the function part (e.g., 'sin', 'cos') and the constant part (e.g., 'pi', 'e')
-/// from the concatenated function-constant name. It then adds tokens for the function, wraps the constant
-/// within parentheses, and adds the corresponding constant token.
+/// This function separates the input string into function and constant segments based on standard naming conventions
+/// (e.g., 'sin' for sine function and 'pi' for π). It then generates tokens for the identified function and constant,
+/// appropriately structuring them in the tokens vector with the constant wrapped in parentheses.
 ///
 /// # Arguments
 ///
-/// * `name` - The concatenated function and constant name as a string slice.
-/// * `tokens` - A mutable reference to the vector of tokens where the parsed tokens will be pushed.
+/// * `name` - A string slice representing the concatenated function name and constant (e.g., "sinpi").
+/// * `tokens` - A mutable reference to a vector of tokens where the new tokens will be appended.
+///
+/// # Returns
+///
+/// * `Ok(())` when tokens are successfully added for recognized function-constant combinations.
+/// * `Err(CalculatorError::UnexpectedToken)` if the function name is unrecognized.
 ///
 /// # Examples
 ///
-/// Handling a function combined with a constant 'sinpi':
+/// Successful parsing of a recognized function-constant combination "sinpi":
 ///
 /// ```
 /// let mut tokens = Vec::new();
-/// handle_function_with_constant("sinpi", &mut tokens);
-/// // Results in tokens for 'sin', followed by '(', 'pi', and ')'
+/// assert!(handle_function_with_constant("sinpi", &mut tokens).is_ok());
 /// assert_eq!(tokens, vec![Token::Sin, Token::LeftParenthesis, Token::Pi, Token::RightParenthesis]);
 /// ```
 ///
-/// Ignoring an unrecognized combination:
+/// Handling unrecognized function names combined with a constant:
 ///
 /// ```
 /// let mut tokens = Vec::new();
-/// handle_function_with_constant("unknownpi", &mut tokens);
-/// // No tokens are added for unrecognized function names
-/// assert!(tokens.is_empty());
+/// assert!(handle_function_with_constant("unknownpi", &mut tokens).is_err());
+/// assert!(tokens.is_empty()); // No tokens added due to unrecognized function name
 /// ```
 fn handle_function_with_constant(name: &str, tokens: &mut Vec<Token>) -> Result<(), CalculatorError> {
     let (func, const_part) = name.split_at(name.len() - 2);

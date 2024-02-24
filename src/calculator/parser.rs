@@ -155,6 +155,8 @@ fn parse_expression(tokens: &[Token]) -> Result<(AST, &[Token]), CalculatorError
                     if matches!(token, Token::Plus) { Operator::Add } else { Operator::Sub },
                     Box::new(rhs),
                 );
+
+                // println!("lhs:{:?}", lhs);
                 rest = next_tokens;
             },
             _ => break,

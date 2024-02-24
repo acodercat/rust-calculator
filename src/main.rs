@@ -4,7 +4,7 @@ use std::io::{self, Write};
 use calculator::process_expression;
 
 fn main() {
-    println!("Welcome to the calculator for Toptal!");
+    println!("Welcome to the Rust calculator!");
     println!("Enter an expression, or type 'exit' to quit.");
 
     loop {
